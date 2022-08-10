@@ -40,10 +40,10 @@ fn main() -> Result<(), anyhow::Error> {
     let tag = cli.tag.unwrap_or("latest".to_owned());
     let digest = cli.digest;
 
-    if is_cached(registry, image, tag, digest)? {
-        println!("true");
+    if let Some(digest) = is_cached(registry, image, tag, digest)? {
+        println!("{digest}");
     } else {
-        println!("false");
+        println!("true");
     }
 
     Ok(())
@@ -54,7 +54,7 @@ fn is_cached(
     image: String,
     tag: String,
     target_digest: String,
-) -> Result<bool, anyhow::Error> {
+) -> Result<Option<String>, anyhow::Error> {
     let client = reqwest::blocking::Client::new();
     let res = client
         .get(format!("https://{registry}/v2/{image}/manifests/{tag}"))
@@ -70,7 +70,11 @@ fn is_cached(
             .or(headers.get("Docker-Content-Digest"))
         {
             let digest = digest.to_str()?;
-            return Ok(target_digest == digest);
+            if target_digest == digest {
+                return Ok(None);
+            } else {
+                return Ok(Some(digest.to_owned()));
+            }
         }
     }
     let headers = res.headers();
@@ -100,9 +104,13 @@ fn is_cached(
                 .or(headers.get("Docker-Content-Digest"))
             {
                 let digest = digest.to_str()?;
-                return Ok(target_digest == digest);
+                if target_digest == digest {
+                    return Ok(None);
+                } else {
+                    return Ok(Some(digest.to_owned()));
+                }
             }
         }
     }
-    Ok(false)
+    anyhow::bail!("digest is not found");
 }
