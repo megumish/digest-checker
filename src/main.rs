@@ -112,5 +112,5 @@ fn is_cached(
             }
         }
     }
-    anyhow::bail!("digest is not found");
+    Ok(Some("".to_owned()))
 }
