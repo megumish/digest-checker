@@ -112,5 +112,5 @@ fn is_cached(
             }
         }
     }
-    Ok(Some("".to_owned()))
+    Ok(Some("sha256:".to_owned()))
 }
